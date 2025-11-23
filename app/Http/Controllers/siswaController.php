@@ -2,39 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\siswa;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
+use App\Services\SiswaService;
+use App\Http\Requests\StoreSiswaRequest;
+use App\Http\Requests\UpdateSiswaRequest;
 use Illuminate\Support\Facades\DB;
 
-class siswaController extends Controller
+class SiswaController extends Controller
 {
-    
+    protected $service;
 
-    // ========================
-    //  HALAMAN HOME SISWA
-    
-    // ========================
-    public function home()
+    public function __construct(SiswaService $service)
     {
-        $idSiswa = session('siswa_id');
-
-        $siswa = siswa::find($idSiswa);
-
-        $dataKbm = DB::table('datakbm')
-            ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
-            ->select(
-                'dataguru.namaguru',
-                'dataguru.mapel',
-                'datakbm.hari',
-                'datakbm.mulai',
-                'datakbm.selesai'
-            )
-            ->where('datakbm.idwalas', '=', $siswa->idwalas)
-            ->orderBy('datakbm.hari')
-            ->get();
-
-        return view('home', compact('dataKbm'));
+        $this->service = $service;
     }
+    
+
 
 
     // ========================
@@ -52,18 +36,11 @@ class siswaController extends Controller
         return view('siswa.create');
     }
 
-   public function store(Request $request)
-{
-    $validated = $request->validate([
-        'nama' => 'required',
-        'tb' => 'required|numeric',
-        'bb' => 'required|numeric',
-    ]);
-
-    $validated['admin_id'] = session('admin_id'); // ← tambahkan ini
-
-    return redirect()->route('home')->with('success', 'Data berhasil ditambahkan');
-}
+    public function store(StoreSiswaRequest $request)
+    {
+        $this->service->createSiswa($request->validated());
+        return redirect()->route('home')->with('success', 'Data siswa berhasil ditambahkan!');
+    }
 
 
     public function edit($id)
@@ -72,18 +49,16 @@ class siswaController extends Controller
         return view('siswa.edit', compact('siswa'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateSiswaRequest $request, Siswa $siswa)
     {
-        $siswa = siswa::findOrFail($id);
-        $siswa->update($request->only('nama', 'tb', 'bb'));
-        return redirect()->route('siswa.index');
+        $this->service->updateSiswa($siswa, $request->validated());
+        return redirect()->route('home')->with('success', 'Data siswa berhasil diperbarui!');
     }
 
-    public function destroy($id)
+    public function destroy(Siswa $siswa)
     {
-        $siswa = siswa::findOrFail($id);
-        $siswa->delete();
-        return redirect()->route('siswa.index');
+        $this->service->deleteSiswa($siswa);
+        return redirect()->route('home')->with('success', 'Data siswa berhasil dihapus!');
     }
 
     public function getData()

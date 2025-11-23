@@ -39,10 +39,10 @@ Route::post('/siswa/store', [siswaController::class, 'store'])
 Route::get('/siswa/edit/{id}', [siswaController::class, 'edit'])
     ->name('siswa.edit');
 
-Route::post('/siswa/update/{id}', [siswaController::class, 'update'])
+Route::put('/siswa/update/{siswa}', [SiswaController::class, 'update'])
     ->name('siswa.update');
 
-Route::get('/siswa/delete/{id}', [siswaController::class, 'destroy'])
+Route::delete('/siswa/delete/{siswa}', [SiswaController::class, 'destroy'])
     ->name('siswa.delete');
 
 Route::get('/siswa/data', [SiswaController::class, 'getData'])

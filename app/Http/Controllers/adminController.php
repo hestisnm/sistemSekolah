@@ -7,9 +7,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Exception;
+use App\Services\AuthService;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 
 class adminController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
     public function index()
     {
         if (!session()->has('username')) {
@@ -114,109 +123,11 @@ return view('home', compact('data', 'jadwals'));
     }
 
 
-    public function loginPost(Request $request)
+    public function loginPost(LoginRequest $request)
     {
         try {
-            $request->validate([
-                'username' => 'required|string',
-                'password' => 'required|string',
-            ]);
-
-            $user = DB::table('dataadmin')
-                ->where('username', $request->username)
-                ->first();
-
-            if (!$user) {
-                return back()->with('error', 'Username tidak ditemukan!');
-            }
-
-            if (!Hash::check($request->password, $user->password)) {
-                return back()->with('error', 'Password salah!');
-            }
-
-            // --------------------------
-            // LOGIN GURU
-            // --------------------------
-            if ($user->role == 'guru') {
-
-                $guru = DB::table('dataguru')
-                    ->where('admin_id', $user->id)
-                    ->first();
-
-                // Jika dataguru tidak ada → buat otomatis
-                if (!$guru) {
-                    DB::table('dataguru')->insert([
-                        'admin_id' => $user->id,
-                        'nama' => $user->username,
-                        'mapel' => 'Umum',
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
-
-                    $guru = DB::table('dataguru')
-                        ->where('admin_id', $user->id)
-                        ->first();
-                }
-
-                session([
-                    'username' => $user->username,
-                    'role' => 'guru',
-                    'guru_id' => $guru->idguru
-                ]);
-
-                return redirect()->route('home');
-            }
-
-            // --------------------------
-            // LOGIN SISWA
-            // --------------------------
-            elseif ($user->role == 'siswa') {
-
-                $siswa = DB::table('datasiswa')
-                    ->where('admin_id', $user->id)
-                    ->first();
-
-                // Jika data siswa tidak ada → buat otomatis
-                if (!$siswa) {
-                    DB::table('datasiswa')->insert([
-                        'admin_id' => $user->id,
-                        'nama' => $user->username,
-                        'tb' => 0,
-                        'bb' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
-
-                    $siswa = DB::table('datasiswa')
-                        ->where('admin_id', $user->id)
-                        ->first();
-                }
-
-                session([
-                    'username' => $user->username,
-                    'role' => 'siswa',
-                    'siswa_id' => $siswa->idsiswa
-                ]);
-
-                return redirect()->route('home');
-            }
-
-            // --------------------------
-            // LOGIN ADMIN
-            // --------------------------
-          else {
-    // Untuk role admin
-    session([
-        'username' => $user->username,
-        'role' => 'admin',
-        'admin_id' => $user->id     // ⬅ WAJIB ADA!
-    ]);
-    return redirect()->route('home');
-}
-
-
-         
-
+            $this->authService->login($request->validated());
+            return redirect()->route('home');
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -245,43 +156,11 @@ return view('home', compact('data', 'jadwals'));
 
 
 
-    public function prosesRegister(Request $request)
+    public function prosesRegister(RegisterRequest $request)
     {
         try {
-
-            $request->validate([
-                'username' => 'required|unique:dataadmin,username',
-                'password' => 'required|min:8',
-                'role' => 'required|in:admin,guru,siswa'
-            ]);
-
-            // Simpan ke dataadmin → dapat admin_id
-            $adminId = DB::table('dataadmin')->insertGetId([
-                'username' => $request->username,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Buat data guru/siswa sesuai role
-            if ($request->role == 'guru') {
-                DB::table('dataguru')->insert([
-                    'admin_id' => $adminId,
-                    'nama' => $request->username,
-                    'mapel' => 'Umum'
-                ]);
-            } elseif ($request->role == 'siswa') {
-                DB::table('datasiswa')->insert([
-                    'admin_id' => $adminId,
-                    'nama' => $request->username,
-                    'tb' => 0,
-                    'bb' => 0
-                ]);
-            }
-
-            return back()->with('error', 'Registrasi berhasil!');
-
+            $this->authService->register($request->validated());
+            return back()->with('success', 'Registrasi berhasil!');
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }

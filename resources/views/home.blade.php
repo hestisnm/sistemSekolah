@@ -231,7 +231,11 @@ $(document).ready(function(){
                     <td>${s.bb}</td>
                     <td>
                         <a href="/siswa/edit/${s.idsiswa}">Edit</a> |
-                        <a href="/siswa/delete/${s.idsiswa}" onclick="return confirm('Yakin ingin menghapus?')">Hapus</a>
+                        <form action="/siswa/delete/${s.idsiswa}" method="POST" style="display:inline;">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" onclick="return confirm('Yakin ingin menghapus?')">Hapus</button>
+                        </form>
                     </td>
                 </tr>
                 `;

@@ -1,21 +1,26 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\konten;
-
 use Illuminate\Http\Request;
+use App\Repositories\KontenRepository;
 
 class kontenController extends Controller
 {
+    protected $kontenRepo;
+
+    public function __construct(KontenRepository $kontenRepo)
+    {
+        $this->kontenRepo = $kontenRepo;
+    }
     //
     public function landing()
     {
-        $konten = konten::all();
+        $konten = $this->kontenRepo->getAll();
         return view('landing', compact('konten'));
     }
     public function detil($id)
     {
-        $datakonten = konten::findOrFail($id);
+        $datakonten = $this->kontenRepo->findById($id);
         return view('detil', compact('datakonten'));
     }
 
