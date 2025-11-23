@@ -14,7 +14,7 @@ class kelas extends Model
     protected $primaryKey = 'idkelas';
     public $timestamps = false;
     
-    protected $fillable = ['idwalas', 'idsiswa'];
+    protected $fillable = ['idwalas', 'idsiswa', 'namakelas'];
 
     
     public function walas()

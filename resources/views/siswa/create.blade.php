@@ -1,19 +1,11 @@
-<!DOCTYPE html>
-<html>
+<h2>Tambah Siswa</h2>
 
-<head>
-    <title>Tambah Siswa</title>
-</head>
+<form action="{{ route('siswa.store') }}" method="POST">
+    @csrf
+    Username: <input type="text" name="nama"><br>
+    Nama: <input type="text" name="nama"><br>
+    Tinggi Badan: <input type="number" name="tb"><br>
+    Berat Badan: <input type="number" name="bb"><br>
 
-<body>
-    <h2>Tambah Siswa</h2>
-    <form method="POST" action="{{ route('siswa.store') }}">
-        @csrf
-        <input type="text" name="nama" placeholder="Nama" required><br>
-        <input type="number" name="tb" placeholder="Tinggi Badan (cm)" required><br>
-        <input type="number" name="bb" placeholder="Berat Badan (kg)" required><br>
-        <button type="submit">Simpan</button>
-    </form>
-</body>
-
-</html>
+    <button type="submit">Simpan</button>
+</form>

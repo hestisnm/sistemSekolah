@@ -12,39 +12,27 @@ class adminController extends Controller
 {
     public function index()
     {
-        $role = session('role');
-        $data = null;
-        $jadwals = collect(); // biar tidak error kalau belum ada
-
-    if ($role == 'guru') {
-        $guruId = session('guru_id');
-        if ($guruId) {
-            $data = DB::table('dataguru')->where('idguru', $guruId)->first();
-
-            // 🔹 Ambil jadwal yang sesuai guru login
-            $jadwals = DB::table('datakbm')
-                ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
-                ->join('datawalas', 'datakbm.idwalas', '=', 'datawalas.idwalas')
-                ->select(
-                    'datakbm.*',
-                    'dataguru.nama as nama_guru',
-                    'dataguru.mapel as mapel_guru',
-                    'datawalas.nama_kelas as nama_kelas',
-                    'datawalas.tahun_ajaran as tahun_ajaran'
-                )
-                ->where('datakbm.idguru', $guruId)
-                ->get();
+        if (!session()->has('username')) {
+            return redirect()->route('login');
         }
 
-    } elseif ($role == 'siswa') {
-        $siswaId = session('siswa_id');
-        if ($siswaId) {
-            $data = DB::table('datasiswa')->where('idsiswa', $siswaId)->first();
+        $role = session('role');
+        $data = null;
+        $jadwals = collect();
+       $daftarSiswa = DB::table('datasiswa')->get();
+return view('home', compact('data', 'daftarSiswa', 'jadwals'));
 
-            // 🔹 Cari kelas siswa lewat tabel datakelas
-            $kelas = DB::table('datakelas')->where('idsiswa', $siswaId)->first();
 
-            if ($kelas) {
+        // --------------------------
+        // ROLE GURU
+        // --------------------------
+        if ($role == 'guru') {
+
+            $guruId = session('guru_id');
+
+            if ($guruId) {
+                $data = DB::table('dataguru')->where('idguru', $guruId)->first();
+
                 $jadwals = DB::table('datakbm')
                     ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
                     ->join('datawalas', 'datakbm.idwalas', '=', 'datawalas.idwalas')
@@ -55,37 +43,77 @@ class adminController extends Controller
                         'datawalas.nama_kelas as nama_kelas',
                         'datawalas.tahun_ajaran as tahun_ajaran'
                     )
-                    ->where('datakbm.idwalas', $kelas->idwalas)
+                    ->where('datakbm.idguru', $guruId)
                     ->get();
             }
+
         }
 
-    } else {
-        // 🔹 Admin lihat semua jadwal
-        $jadwals = DB::table('datakbm')
-            ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
-            ->join('datawalas', 'datakbm.idwalas', '=', 'datawalas.idwalas')
-            ->select(
-                'datakbm.*',
-                'dataguru.nama as nama_guru',
-                'dataguru.mapel as mapel_guru',
-                'datawalas.nama_kelas as nama_kelas',
-                'datawalas.tahun_ajaran as tahun_ajaran'
-            )
-            ->get();
-    }
+        // --------------------------
+        // ROLE SISWA
+        // --------------------------
+        elseif ($role == 'siswa') {
 
-    $daftarSiswa = DB::table('datasiswa')->get();
+            $siswaId = session('siswa_id');
+
+            if ($siswaId) {
+                $data = DB::table('datasiswa')->where('idsiswa', $siswaId)->first();
+
+                $kelas = DB::table('datakelas')->where('idsiswa', $siswaId)->first();
+
+                if ($kelas) {
+                    $jadwals = DB::table('datakbm')
+                        ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
+                        ->join('datawalas', 'datakbm.idwalas', '=', 'datawalas.idwalas')
+                        ->select(
+                            'datakbm.*',
+                            'dataguru.nama as nama_guru',
+                            'dataguru.mapel as mapel_guru',
+                            'datawalas.nama_kelas as nama_kelas',
+                            'datawalas.tahun_ajaran as tahun_ajaran'
+                        )
+                        ->where('datakbm.idwalas', $kelas->idwalas)
+                        ->get();
+                }
+            }
+
+        }
+
+        // --------------------------
+        // ROLE ADMIN (INI YANG PENTING)
+        // --------------------------
+        else {
+
+            // Admin lihat semua siswa
+            $daftarSiswa = DB::table('datasiswa')->get();
+
+            // Admin lihat semua jadwal
+            $jadwals = DB::table('datakbm')
+                ->join('dataguru', 'datakbm.idguru', '=', 'dataguru.idguru')
+                ->join('datawalas', 'datakbm.idwalas', '=', 'datawalas.idwalas')
+                ->select(
+                    'datakbm.*',
+                    'dataguru.nama as nama_guru',
+                    'dataguru.mapel as mapel_guru',
+                    'datawalas.nama_kelas as nama_kelas',
+                    'datawalas.tahun_ajaran as tahun_ajaran'
+                )
+                ->get();
+        }
 
         return view('home', compact('data', 'daftarSiswa', 'jadwals'));
     }
 
 
 
+    // ========================================================
+    // LOGIN
+    // ========================================================
     public function formLogin()
     {
         return view('login');
     }
+
 
     public function loginPost(Request $request)
     {
@@ -95,158 +123,168 @@ class adminController extends Controller
                 'password' => 'required|string',
             ]);
 
-            $username = $request->username;
-            $password = $request->password;
-            
-            // Cek di tabel dataadmin
             $user = DB::table('dataadmin')
-                    ->where('username', $username)
-                    ->first();
-            
+                ->where('username', $request->username)
+                ->first();
+
             if (!$user) {
-                return redirect()->back()->with('error', 'Username tidak ditemukan!');
+                return back()->with('error', 'Username tidak ditemukan!');
             }
 
-            if (!Hash::check($password, $user->password)) {
-                return redirect()->back()->with('error', 'Password salah!');
+            if (!Hash::check($request->password, $user->password)) {
+                return back()->with('error', 'Password salah!');
             }
-            
-            // Jika role guru
+
+            // --------------------------
+            // LOGIN GURU
+            // --------------------------
             if ($user->role == 'guru') {
+
                 $guru = DB::table('dataguru')
-                        ->where('idguru', $user->id)  // Menggunakan idguru sebagai kunci relasi
-                        ->first();
-                
+                    ->where('admin_id', $user->id)
+                    ->first();
+
+                // Jika dataguru tidak ada → buat otomatis
                 if (!$guru) {
-                    // Jika data guru tidak ditemukan, buat data guru baru
-                    $guruData = [
-                        'idguru' => $user->id,
-                        'admin_id' => $user->id,  // Menambahkan admin_id yang diperlukan
+                    DB::table('dataguru')->insert([
+                        'admin_id' => $user->id,
                         'nama' => $user->username,
                         'mapel' => 'Umum',
                         'created_at' => now(),
                         'updated_at' => now()
-                    ];
-                    
-                    try {
-                        DB::table('dataguru')->insert($guruData);
-                    } catch (\Exception $e) {
-                        Log::error('Gagal menyimpan data guru: ' . $e->getMessage());
-                        return redirect()->back()->with('error', 'Gagal membuat data guru baru: ' . $e->getMessage());
-                    }
-                    
-                    session([
-                        'username' => $user->username,
-                        'role' => 'guru',
-                        'guru_id' => $user->id
                     ]);
-                } else {
-                    session([
-                        'username' => $user->username,
-                        'role' => 'guru',
-                        'guru_id' => $guru->idguru
-                    ]);
+
+                    $guru = DB::table('dataguru')
+                        ->where('admin_id', $user->id)
+                        ->first();
                 }
+
+                session([
+                    'username' => $user->username,
+                    'role' => 'guru',
+                    'guru_id' => $guru->idguru
+                ]);
+
                 return redirect()->route('home');
-            } 
-            // Jika role siswa
+            }
+
+            // --------------------------
+            // LOGIN SISWA
+            // --------------------------
             elseif ($user->role == 'siswa') {
+
                 $siswa = DB::table('datasiswa')
-                         ->where('idsiswa', $user->id)  // Menggunakan idsiswa sebagai kunci relasi
-                         ->first();
-                
+                    ->where('admin_id', $user->id)
+                    ->first();
+
+                // Jika data siswa tidak ada → buat otomatis
                 if (!$siswa) {
-                    // Jika data siswa tidak ditemukan, buat data siswa baru
-                    $siswaData = [
-                        'idsiswa' => $user->id,
+                    DB::table('datasiswa')->insert([
+                        'admin_id' => $user->id,
                         'nama' => $user->username,
                         'tb' => 0,
                         'bb' => 0,
                         'created_at' => now(),
                         'updated_at' => now()
-                    ];
-                    
-                    DB::table('datasiswa')->insert($siswaData);
-                    
-                    session([
-                        'username' => $user->username,
-                        'role' => 'siswa',
-                        'siswa_id' => $user->id
                     ]);
-                } else {
-                    session([
-                        'username' => $user->username,
-                        'role' => 'siswa',
-                        'siswa_id' => $siswa->idsiswa
-                    ]);
+
+                    $siswa = DB::table('datasiswa')
+                        ->where('admin_id', $user->id)
+                        ->first();
                 }
-                return redirect()->route('home');
-            } else {
-                // Untuk role admin
+
                 session([
                     'username' => $user->username,
-                    'role' => 'admin'
+                    'role' => 'siswa',
+                    'siswa_id' => $siswa->idsiswa
                 ]);
+
                 return redirect()->route('home');
             }
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+
+            // --------------------------
+            // LOGIN ADMIN
+            // --------------------------
+          else {
+    // Untuk role admin
+    session([
+        'username' => $user->username,
+        'role' => 'admin',
+        'admin_id' => $user->id     // ⬅ WAJIB ADA!
+    ]);
+    return redirect()->route('home');
+}
+
+
+         
+
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
     }
 
+
+
+    // ========================================================
+    // LOGOUT
+    // ========================================================
     public function logout()
     {
-        session()->forget(['username', 'role']);
+        session()->flush();
         return redirect()->route('landing');
     }
 
+
+
+    // ========================================================
+    // REGISTER
+    // ========================================================
     public function formRegister()
     {
         return view('register');
     }
 
+
+
     public function prosesRegister(Request $request)
     {
         try {
+
             $request->validate([
-                'username' => 'required|string|max:50|unique:dataadmin,username',
-                'password' => 'required|string|min:8',
-                'role' => 'required|string|in:admin,guru,siswa',
+                'username' => 'required|unique:dataadmin,username',
+                'password' => 'required|min:8',
+                'role' => 'required|in:admin,guru,siswa'
             ]);
-            
-            // Insert ke tabel dataadmin
-            $userId = DB::table('dataadmin')->insertGetId([
+
+            // Simpan ke dataadmin → dapat admin_id
+            $adminId = DB::table('dataadmin')->insertGetId([
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            
-            // Jika role guru, buat juga di tabel dataguru
+
+            // Buat data guru/siswa sesuai role
             if ($request->role == 'guru') {
                 DB::table('dataguru')->insert([
-                    'id' => $userId,
-                    'nama' => $request->username, // Default nama sama dengan username
-                    'mapel' => 'Umum', // Default mapel
+                    'admin_id' => $adminId,
+                    'nama' => $request->username,
+                    'mapel' => 'Umum'
                 ]);
-            }
-            // Jika role siswa, buat juga di tabel datasiswa
-            elseif ($request->role == 'siswa') {
+            } elseif ($request->role == 'siswa') {
                 DB::table('datasiswa')->insert([
-                    'id' => $userId,
-                    'nama' => $request->username, // Default nama sama dengan username
-                    'tb' => 0, // Default tinggi badan
-                    'bb' => 0, // Default berat badan
+                    'admin_id' => $adminId,
+                    'nama' => $request->username,
+                    'tb' => 0,
+                    'bb' => 0
                 ]);
             }
-            return redirect()->back()->with('error', 'Registrasi berhasil!');
+
+            return back()->with('error', 'Registrasi berhasil!');
+
         } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Registrasi gagal: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage());
         }
     }
-
-
 }
-
-

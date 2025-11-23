@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('datakbm', function (Blueprint $table) {
             $table->id('idkbm');
-            $table->unsignedBigInteger('idguru')->unique();
-            $table->foreign('idguru')->references('idguru')->on('dataguru')->onDelete('cascade');
-            $table->unsignedBigInteger('idwalas')->unique();
 
+            // relasi ke tabel dataguru (boleh muncul berkali-kali)
+            $table->unsignedBigInteger('idguru');
+            $table->foreign('idguru')->references('idguru')->on('dataguru')->onDelete('cascade');
+
+            // relasi ke tabel datawalas (boleh muncul berkali-kali)
+            $table->unsignedBigInteger('idwalas');
             $table->foreign('idwalas')->references('idwalas')->on('datawalas')->onDelete('cascade');
+
             $table->string('hari');
             $table->string('mulai');
             $table->string('selesai');

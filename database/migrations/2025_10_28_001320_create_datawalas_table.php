@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('datawalas', function (Blueprint $table) {
             $table->id('idwalas');
             $table->string('jenjang');
-            $table->string('namakelas');
-            $table->string('tahunajaran');
+            $table->string('nama_kelas');
+            $table->string('tahun_ajaran');
             $table->unsignedBigInteger('idguru')->unique();
             $table->foreign('idguru')->references('idguru')->on('dataguru')->onDelete('cascade');
             $table->timestamps();

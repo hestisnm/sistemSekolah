@@ -19,8 +19,8 @@ class walasFactory extends Factory
     {
         return [
             'jenjang' => $this->faker->randomElement(['X', 'XI', 'XII']),
-            'namakelas' => $this->faker->randomElement(['A', 'B', 'C']),
-            'tahunajaran' => '2025/2026',
+            'nama_kelas' => $this->faker->randomElement(['A', 'B', 'C']),
+            'tahun_ajaran' => '2025/2026',
             'idguru' => Guru::factory()
         ];
     }

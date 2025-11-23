@@ -13,7 +13,7 @@ class siswa extends Model
     protected $primaryKey = 'idsiswa';
     
     protected $fillable = [
-        'id',
+        'admin_id',
         'nama',
         'tb',
         'bb'
@@ -21,7 +21,7 @@ class siswa extends Model
     
     public function admin()
     {
-        return $this->belongsTo(\App\Models\admin::class, 'id');
+        return $this->belongsTo(\App\Models\admin::class, 'admin_id');
     }
     
     public function kelas()

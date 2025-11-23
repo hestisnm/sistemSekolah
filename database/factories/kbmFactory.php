@@ -20,8 +20,8 @@ class kbmFactory extends Factory
     public function definition(): array
     {
 
-        $guruIds = \App\Models\guru::pluck('idguru')->toArray();
-        $kelasIds = \App\Models\walas::pluck('idwalas')->toArray();
+        $guruIds = guru::pluck('idguru')->toArray();
+        $kelasIds = walas::pluck('idwalas')->toArray();
         return [
             'idguru' => $this->faker->randomElement($guruIds),
             'idwalas' => $this->faker->randomElement($kelasIds),

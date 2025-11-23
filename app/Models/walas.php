@@ -12,6 +12,12 @@ class walas extends Model
     protected $table = 'datawalas';
     protected $primaryKey = 'idwalas';
     public $timestamps = false;
+    
+    protected $fillable = [
+        'idguru',
+        'namakelas',
+        // add other fillable fields here
+    ];
     public function guru()
     {
         return $this->belongsTo(guru::class, 'idguru');
