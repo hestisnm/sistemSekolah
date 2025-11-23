@@ -19,8 +19,7 @@ class adminController extends Controller
         $role = session('role');
         $data = null;
         $jadwals = collect();
-       $daftarSiswa = DB::table('datasiswa')->get();
-return view('home', compact('data', 'daftarSiswa', 'jadwals'));
+return view('home', compact('data', 'jadwals'));
 
 
         // --------------------------

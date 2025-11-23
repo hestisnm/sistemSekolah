@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\kbm;
+use App\Models\Siswa;
+use Illuminate\Support\Facades\DB;
 
 class kbmController extends Controller
 {
@@ -75,6 +78,39 @@ class kbmController extends Controller
     {
         $kelas = \App\Models\Kelas::with(['kbm.guru'])->findOrFail($idwalas);
         return view('jadwal.kelas', compact('kelas'));
+    }
+
+    public function getJadwal(Request $request)
+    {
+        $role = session('role');
+        $query = Kbm::with(['guru', 'walas']);
+
+        if ($role == 'guru') {
+            $query->where('idguru', session('guru_id'));
+        } elseif ($role == 'siswa') {
+            $siswa = Siswa::find(session('siswa_id'));
+            if ($siswa && $siswa->kelas) {
+                $query->where('idwalas', $siswa->kelas->idwalas);
+            } else {
+                $query->whereRaw('1 = 0'); // No schedule if not in a class
+            }
+        }
+
+        if ($request->filled('q')) {
+            $keyword = strtolower($request->input('q'));
+            $query->where(function ($q) use ($keyword) {
+                $q->whereHas('guru', function ($subQuery) use ($keyword) {
+                    $subQuery->whereRaw('LOWER(nama) LIKE ?', ["%{$keyword}%"])
+                             ->orWhereRaw('LOWER(mapel) LIKE ?', ["%{$keyword}%"]);
+                })->orWhereHas('walas', function ($subQuery) use ($keyword) {
+                    $subQuery->whereRaw('LOWER(nama_kelas) LIKE ?', ["%{$keyword}%"]);
+                });
+            });
+        }
+
+        $jadwals = $query->get();
+
+        return response()->json($jadwals);
     }
 
 }

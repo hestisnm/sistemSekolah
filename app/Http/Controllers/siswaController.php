@@ -85,4 +85,18 @@ class siswaController extends Controller
         $siswa->delete();
         return redirect()->route('siswa.index');
     }
+
+    public function getData()
+    {
+        $siswa = Siswa::all();
+        return response()->json($siswa);
+    }
+
+    public function search(Request $request)
+    {
+        $keyword = strtolower($request->input('q'));
+        $siswa = Siswa::whereRaw('LOWER(nama) LIKE ?', ["%{$keyword}%"])
+            ->get();
+        return response()->json($siswa);
+    }
 }

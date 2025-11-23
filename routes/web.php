@@ -45,6 +45,12 @@ Route::post('/siswa/update/{id}', [siswaController::class, 'update'])
 Route::get('/siswa/delete/{id}', [siswaController::class, 'destroy'])
     ->name('siswa.delete');
 
+Route::get('/siswa/data', [SiswaController::class, 'getData'])
+    ->name('siswa.data');
+
+Route::get('/siswa/search', [SiswaController::class, 'search'])
+    ->name('siswa.search');
+
 });
 
 
@@ -54,5 +60,6 @@ Route::post('/kbm', [kbmController::class, 'store'])->name('kbm.store');
 Route::get('/kbm', [KbmController::class, 'index'])->name('kbm.index');
 Route::get('/kbm/guru/{idguru}', [KbmController::class, 'showByGuru'])->name('kbm.byGuru');
 Route::get('/kbm/kelas/{idwalas}', [KbmController::class, 'showByKelas'])->name('kbm.byKelas');
+Route::get('/kbm/data', [KbmController::class, 'getJadwal'])->name('kbm.data')->middleware('CekLogin');
 
 

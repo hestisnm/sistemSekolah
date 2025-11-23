@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Home</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -120,32 +121,22 @@
     <a href="{{ route('siswa.create') }}">+ Tambah Siswa</a>
     <br><br>
 
-    {{-- Tabel CRUD --}}
-    <table border="1" cellpadding="8">
-        <tr>
-            <th>No</th>
-            <th>Nama</th>
-            <th>TB</th>
-            <th>BB</th>
-            <th>Aksi</th>
-        </tr>
+    <p><label>Cari Siswa: </label><input type="text" id="search" placeholder="Ketik nama..."></p>
 
-        @foreach($allSiswa as $i => $s)
+    {{-- Tabel CRUD --}}
+    <table border="1" cellpadding="8" id="tabel-siswa">
+        <thead>
             <tr>
-                <td>{{ $i + 1 }}</td>
-                <td>{{ $s->nama }}</td>
-                <td>{{ $s->tb }}</td>
-                <td>{{ $s->bb }}</td>
-                <td>
-                    <a href="{{ route('siswa.edit', $s->idsiswa) }}">Edit</a> |
-                    <form action="{{ route('siswa.delete', $s->idsiswa) }}" 
-                          method="GET"
-                          style="display:inline">
-                        <button onclick="return confirm('Yakin hapus?')">Hapus</button>
-                    </form>
-                </td>
+                <th>No</th>
+                <th>Nama</th>
+                <th>TB</th>
+                <th>BB</th>
+                <th>Aksi</th>
             </tr>
-        @endforeach
+        </thead>
+        <tbody>
+            {{-- Data will be loaded by AJAX --}}
+        </tbody>
     </table>
 
 @endif
@@ -198,60 +189,164 @@
 {{-- ========================================================= --}}
 <hr>
 <h3>📚 Jadwal KBM</h3>
+<p><label>Cari Jadwal: </label><input type="text" id="search-kbm" placeholder="Ketik mapel atau guru"></p>
 
-@php
-    $filtered = collect();
-
-    if ($role == 'guru') {
-        $filtered = $jadwals->where('idguru', session('guru_id'));
-    } elseif ($role == 'siswa') {
-        if ($siswa && $kelas) {
-            $filtered = $jadwals->where('idwalas', $kelas->idwalas);
-        }
-    } else {
-        $filtered = $jadwals;
-    }
-@endphp
-
-
-@if($filtered->count())
-<table border="1" cellpadding="8">
-    <tr>
-        <th>No</th>
-        @if($role != 'guru')
-            <th>Guru</th>
-        @endif
-        <th>Mapel</th>
-        @if($role != 'siswa')
-            <th>Kelas</th>
-        @endif
-        <th>Hari</th>
-        <th>Mulai</th>
-        <th>Selesai</th>
-    </tr>
-
-    @foreach($filtered as $i => $j)
+<table border="1" cellpadding="8" id="tabel-kbm">
+    <thead>
         <tr>
-            <td>{{ $i + 1 }}</td>
+            <th>No</th>
             @if($role != 'guru')
-                <td>{{ $j->guru->nama}}</td>
+                <th>Guru</th>
             @endif
-            <td>{{ $j->guru->mapel}}</td>
+            <th>Mapel</th>
             @if($role != 'siswa')
-                <td>{{ $j->walas->jenjang }} {{ $j->walas->nama_kelas }}</td>
+                <th>Kelas</th>
             @endif
-            <td>{{ $j->hari }}</td>
-            <td>{{ $j->mulai }}</td>
-            <td>{{ $j->selesai }}</td>
+            <th>Hari</th>
+            <th>Mulai</th>
+            <th>Selesai</th>
         </tr>
-    @endforeach
+    </thead>
+    <tbody>
+        {{-- KBM data will be loaded by AJAX --}}
+    </tbody>
 </table>
-@else
-<p>Tidak ada jadwal.</p>
-@endif
 
 
 
 
+<script>
+$(document).ready(function(){
+    function renderTable(data) {
+        let rows = '';
+        if (data.length === 0) {
+            rows = '<tr><td colspan="5">Tidak ada data ditemukan</td></tr>';
+        } else {
+            data.forEach((s, index) => {
+                rows += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${s.nama}</td>
+                    <td>${s.tb}</td>
+                    <td>${s.bb}</td>
+                    <td>
+                        <a href="/siswa/edit/${s.idsiswa}">Edit</a> |
+                        <a href="/siswa/delete/${s.idsiswa}" onclick="return confirm('Yakin ingin menghapus?')">Hapus</a>
+                    </td>
+                </tr>
+                `;
+            });
+        }
+        $('#tabel-siswa tbody').html(rows);
+    }
+
+    function loadSiswa() {
+        $.ajax({
+            url: "{{ route('siswa.data') }}",
+            method: "GET",
+            success: function(response) {
+                renderTable(response);
+            },
+            error: function() {
+                alert('Gagal memuat data siswa.');
+            }
+        });
+    }
+
+    function searchSiswa(keyword) {
+        $.ajax({
+            url: "{{ route('siswa.search') }}",
+            method: "GET",
+            data: { q: keyword },
+            success: function(response) {
+                renderTable(response);
+            },
+            error: function() {
+                console.error('Gagal mencari data siswa.');
+            }
+        });
+    }
+
+    // Initial load
+    if ($('#tabel-siswa').length) {
+        loadSiswa();
+    }
+
+    // Search functionality
+    $('#search').on('keyup', function() {
+        const keyword = $(this).val().trim();
+        if (keyword.length > 0) {
+            searchSiswa(keyword);
+        } else {
+            loadSiswa();
+        }
+    });
+
+    function renderKbmTable(data) {
+        let rows = '';
+        const userRole = '{{ $role }}';
+        if (data.length === 0) {
+            const colspan = userRole === 'admin' ? 7 : 6;
+            rows = `<tr><td colspan="${colspan}">Tidak ada jadwal.</td></tr>`;
+        } else {
+            data.forEach((j, index) => {
+                rows += `
+                <tr>
+                    <td>${index + 1}</td>
+                    ${userRole !== 'guru' ? `<td>${j.guru.nama}</td>` : ''}
+                    <td>${j.guru.mapel}</td>
+                    ${userRole !== 'siswa' ? `<td>${j.walas.jenjang} ${j.walas.nama_kelas}</td>` : ''}
+                    <td>${j.hari}</td>
+                    <td>${j.mulai}</td>
+                    <td>${j.selesai}</td>
+                </tr>
+                `;
+            });
+        }
+        $('#tabel-kbm tbody').html(rows);
+    }
+
+    function loadKbm() {
+        $.ajax({
+            url: "{{ route('kbm.data') }}",
+            method: "GET",
+            success: function(response) {
+                renderKbmTable(response);
+            },
+            error: function() {
+                alert('Gagal memuat jadwal KBM.');
+            }
+        });
+    }
+
+    // Load KBM data
+    if ($('#tabel-kbm').length) {
+        loadKbm();
+    }
+
+    function searchKbm(keyword) {
+        $.ajax({
+            url: "{{ route('kbm.data') }}",
+            method: "GET",
+            data: { q: keyword },
+            success: function(response) {
+                renderKbmTable(response);
+            },
+            error: function() {
+                console.error('Gagal mencari jadwal KBM.');
+            }
+        });
+    }
+
+    $('#search-kbm').on('keyup', function() {
+        const keyword = $(this).val().trim();
+        if (keyword.length > 0) {
+            searchKbm(keyword);
+        } else {
+            loadKbm();
+        }
+    });
+});
+</script>
 </body>
 </html>
