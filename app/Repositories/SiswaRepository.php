@@ -35,16 +35,21 @@ class SiswaRepository
         $siswa->delete();
     }
 
-    public function findOrCreateByAdminId(int $adminId, string $username): Siswa
+    public function findByAdminId(int $adminId): ?Siswa
+    {
+        return Siswa::where('admin_id', $adminId)->first();
+    }
+
+    public function findOrCreateByAdminId(int $adminId, string $nama, int $tb, int $bb): Siswa
     {
         $siswa = Siswa::where('admin_id', $adminId)->first();
 
         if (!$siswa) {
             $siswa = Siswa::create([
                 'admin_id' => $adminId,
-                'nama' => $username,
-                'tb' => 0,
-                'bb' => 0,
+                'nama' => $nama,
+                'tb' => $tb,
+                'bb' => $bb,
             ]);
         }
 

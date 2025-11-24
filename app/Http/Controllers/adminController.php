@@ -10,7 +10,7 @@ use Exception;
 use App\Services\AuthService;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-
+                                                    
 class adminController extends Controller
 {
     protected $authService;
@@ -28,7 +28,7 @@ class adminController extends Controller
         $role = session('role');
         $data = null;
         $jadwals = collect();
-return view('home', compact('data', 'jadwals'));
+        $daftarSiswa = collect();
 
 
         // --------------------------
@@ -160,7 +160,7 @@ return view('home', compact('data', 'jadwals'));
     {
         try {
             $this->authService->register($request->validated());
-            return back()->with('success', 'Registrasi berhasil!');
+            return redirect()->route('home');
         } catch (Exception $e) {
             return back()->with('error', $e->getMessage());
         }

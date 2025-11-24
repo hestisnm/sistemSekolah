@@ -36,11 +36,15 @@ class AuthService
         session(['username' => $user->username, 'role' => $user->role]);
 
         if ($user->role == 'guru') {
-            $guru = $this->guruRepo->findOrCreateByAdminId($user->id, $user->username);
-            session(['guru_id' => $guru->idguru]);
+            $guru = $this->guruRepo->findByAdminId($user->id);
+            if ($guru) {
+                session(['guru_id' => $guru->idguru]);
+            }
         } elseif ($user->role == 'siswa') {
-            $siswa = $this->siswaRepo->findOrCreateByAdminId($user->id, $user->username);
-            session(['siswa_id' => $siswa->idsiswa]);
+            $siswa = $this->siswaRepo->findByAdminId($user->id);
+            if ($siswa) {
+                session(['siswa_id' => $siswa->idsiswa]);
+            }
         } else {
             session(['admin_id' => $user->id]);
         }
@@ -53,10 +57,15 @@ class AuthService
         $adminId = $this->adminRepo->create($data);
 
         if ($data['role'] == 'guru') {
-            $this->guruRepo->findOrCreateByAdminId($adminId, $data['username']);
+            $this->guruRepo->findOrCreateByAdminId($adminId, $data['nama_guru'], $data['mapel']);
         } elseif ($data['role'] == 'siswa') {
-            $this->siswaRepo->findOrCreateByAdminId($adminId, $data['username']);
+            $this->siswaRepo->findOrCreateByAdminId($adminId, $data['nama_siswa'], $data['tb'] ?? 0, $data['bb'] ?? 0);
         }
+
+        // Auto-login after registration
+        // Auto-login after registration
+        $credentials = ['username' => $data['username'], 'password' => $data['password']];
+        $this->login($credentials);
 
         return $adminId;
     }

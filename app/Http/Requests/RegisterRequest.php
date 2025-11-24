@@ -24,7 +24,12 @@ class RegisterRequest extends FormRequest
         return [
             'username' => 'required|unique:dataadmin,username',
             'password' => 'required|min:8',
-            'role' => 'required|in:admin,guru,siswa'
+            'role' => 'required|in:admin,guru,siswa',
+            'nama_guru' => 'required_if:role,guru',
+            'mapel' => 'required_if:role,guru',
+            'nama_siswa' => 'required_if:role,siswa',
+            'tb' => 'required_if:role,siswa|nullable|numeric',
+            'bb' => 'required_if:role,siswa|nullable|numeric'
         ];
     }
 }
